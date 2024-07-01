@@ -158,9 +158,15 @@ class BlackjackGame:
             elif action == 'R':
                 return -bet / 2  # Player surrenders
 
-        # Dealer decisions
-        while dealer_hand.value() < 17 or (dealer_hand.value() == 17 and self.dealer_hit_soft_17):
-            dealer_hand.add_card(self.deck.deal())
+            # Debug log for player action
+            st.write(f"Player action: {action}, Player hand value: {player_hand.value()}")
+
+            # Dealer decisions
+            while dealer_hand.value() < 17 or (dealer_hand.value() == 17 and self.dealer_hit_soft_17):
+                dealer_hand.add_card(self.deck.deal())
+            
+            # Debug log for dealer hand
+            st.write(f"Dealer hand value: {dealer_hand.value()}")
 
         return self.resolve_hand(player_hand, dealer_hand) * bet
 
@@ -219,6 +225,9 @@ def run_simulation(num_simulations, max_hands, win_goal, max_loss, min_bet):
             result = game.play_hand(min_bet)
             bankroll += result
             hands_played += 1
+
+            # Debug log for each hand
+            st.write(f"Simulation {i + 1}, Hand {hands_played}: Bankroll = {bankroll}")
 
         results.append((bankroll, hands_played))
         if i % 10 == 0:  # Update progress every 10 simulations
