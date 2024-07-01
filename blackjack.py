@@ -1,6 +1,7 @@
 import random
 from collections import defaultdict
 import numpy as np
+import streamlit as st
 
 # Basic strategy lookup table
 basic_strategy = {
@@ -248,26 +249,32 @@ def main(further_reduced_simulations=1000):
     
     for max_loss in [5, 10, 20]:
         for win_goal in [1, 2, 5, 10]:
-            print(f"Running simulation for max_loss={max_loss}x, win_goal={win_goal}x")
+            st.write(f"Running simulation for max_loss={max_loss}x, win_goal={win_goal}x")
             sim_results = run_simulation(num_simulations, max_hands, win_goal * min_bet, max_loss * min_bet, min_bet)
             results[max_loss][win_goal] = analyze_results(sim_results, min_bet)
 
     # Print results
-    print("\nEarnings Potential (e_f):")
-    print("   ", end="")
+    st.write("\nEarnings Potential (e_f):")
+    st.write("   ", end="")
     for win_goal in [1, 2, 5, 10]:
-        print(f"{win_goal:>8}x", end="")
-    print()
+        st.write(f"{win_goal:>8}x", end="")
+    st.write()
     
     for max_loss in [5, 10, 20]:
-        print(f"{max_loss:2}x", end="")
+        st.write(f"{max_loss:2}x", end="")
         for win_goal in [1, 2, 5, 10]:
-            print(f"{results[max_loss][win_goal]['earnings_potential']:8.2f}", end="")
-        print()
+            st.write(f"{results[max_loss][win_goal]['earnings_potential']:8.2f}", end="")
+        st.write()
 
     return results
 
-# Run the main function with further reduced simulations and store results
-if __name__ == "__main__":
-    simulation_results_further_reduced = main(further_reduced_simulations=1000)
-    print(simulation_results_further_reduced)
+# Streamlit interface
+st.title("Blackjack Simulation")
+
+further_reduced_simulations = st.number_input("Number of Simulations", min_value=1, max_value=10000, value=1000, step=100)
+min_bet = st.number_input("Minimum Bet", min_value=1, max_value=1000, value=50, step=10)
+max_hands = st.number_input("Maximum Hands", min_value=1, max_value=1000, value=200, step=10)
+
+if st.button("Run Simulation"):
+    simulation_results_further_reduced = main(further_reduced_simulations)
+    st.write(simulation_results_further_reduced)
