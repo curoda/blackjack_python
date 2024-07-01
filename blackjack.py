@@ -143,7 +143,6 @@ class BlackjackGame:
         # Player decisions based on basic strategy
         while True:
             action = get_action(player_hand, dealer_hand.cards[0])
-            st.write(f"Player action: {action}, Player hand value: {player_hand.value()}")
             if action == 'H':
                 player_hand.add_card(self.deck.deal())
                 if player_hand.value() > 21:
@@ -162,7 +161,6 @@ class BlackjackGame:
         # Dealer decisions
         while dealer_hand.value() < 17 or (dealer_hand.value() == 17 and self.dealer_hit_soft_17):
             dealer_hand.add_card(self.deck.deal())
-            st.write(f"Dealer hand value: {dealer_hand.value()}")
 
         return self.resolve_hand(player_hand, dealer_hand) * bet
 
@@ -201,7 +199,6 @@ class BlackjackGame:
         """Plays a hand that has been split."""
         while True:
             action = get_action(player_hand, dealer_hand.cards[0])
-            st.write(f"Player action: {action}, Player hand value: {player_hand.value()}")
             if action == 'H':
                 player_hand.add_card(self.deck.deal())
                 if player_hand.value() > 21:
@@ -218,7 +215,6 @@ class BlackjackGame:
         # Dealer decisions
         while dealer_hand.value() < 17 or (dealer_hand.value() == 17 and self.dealer_hit_soft_17):
             dealer_hand.add_card(self.deck.deal())
-            st.write(f"Dealer hand value: {dealer_hand.value()}")
 
         return self.resolve_hand(player_hand, dealer_hand) * bet
 
@@ -237,8 +233,9 @@ def run_simulation(num_simulations, max_hands, win_goal, max_loss, min_bet):
             bankroll += result
             hands_played += 1
 
-            # Debug log for each hand
-            st.write(f"Simulation {i + 1}, Hand {hands_played}: Bankroll = {bankroll}")
+            # Reduce the frequency of updates to Streamlit
+            if hands_played % 50 == 0:
+                st.write(f"Simulation {i + 1}, Hand {hands_played}: Bankroll = {bankroll}")
 
         results.append((bankroll, hands_played))
         if i % 10 == 0:  # Update progress every 10 simulations
