@@ -223,6 +223,7 @@ def run_simulation(num_simulations, max_hands, win_goal, max_loss, min_bet):
         results.append((bankroll, hands_played))
         if i % 10 == 0:  # Update progress every 10 simulations
             progress_bar.progress(i / num_simulations)
+            st.write(f"Simulation {i + 1} of {num_simulations} completed")
 
     progress_bar.progress(1.0)  # Complete the progress bar
     return results
@@ -248,10 +249,8 @@ def analyze_results(results, min_bet):
         'earnings_potential': avg_bankroll / min_bet
     }
 
-def main(further_reduced_simulations, min_bet, max_hands):
+def main(num_simulations, min_bet, max_hands):
     """Main function to run the blackjack simulation."""
-    num_simulations = further_reduced_simulations
-    
     results = defaultdict(dict)
     
     for max_loss in [5, 10, 20]:
@@ -278,10 +277,10 @@ def main(further_reduced_simulations, min_bet, max_hands):
 # Streamlit interface
 st.title("Blackjack Simulation")
 
-further_reduced_simulations = st.number_input("Number of Simulations", min_value=1, max_value=10000, value=1000, step=100)
+num_simulations = st.number_input("Number of Simulations", min_value=1, max_value=10000, value=10, step=1)
 min_bet = st.number_input("Minimum Bet", min_value=1, max_value=1000, value=50, step=10)
 max_hands = st.number_input("Maximum Hands", min_value=1, max_value=1000, value=200, step=10)
 
 if st.button("Run Simulation"):
-    simulation_results_further_reduced = main(further_reduced_simulations, min_bet, max_hands)
+    simulation_results_further_reduced = main(num_simulations, min_bet, max_hands)
     st.write(simulation_results_further_reduced)
