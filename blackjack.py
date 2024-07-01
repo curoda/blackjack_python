@@ -143,6 +143,7 @@ class BlackjackGame:
         # Player decisions based on basic strategy
         while True:
             action = get_action(player_hand, dealer_hand.cards[0])
+            st.write(f"Player action: {action}, Player hand value: {player_hand.value()}")
             if action == 'H':
                 player_hand.add_card(self.deck.deal())
                 if player_hand.value() > 21:
@@ -158,14 +159,9 @@ class BlackjackGame:
             elif action == 'R':
                 return -bet / 2  # Player surrenders
 
-            # Debug log for player action
-            st.write(f"Player action: {action}, Player hand value: {player_hand.value()}")
-
-            # Dealer decisions
-            while dealer_hand.value() < 17 or (dealer_hand.value() == 17 and self.dealer_hit_soft_17):
-                dealer_hand.add_card(self.deck.deal())
-            
-            # Debug log for dealer hand
+        # Dealer decisions
+        while dealer_hand.value() < 17 or (dealer_hand.value() == 17 and self.dealer_hit_soft_17):
+            dealer_hand.add_card(self.deck.deal())
             st.write(f"Dealer hand value: {dealer_hand.value()}")
 
         return self.resolve_hand(player_hand, dealer_hand) * bet
@@ -203,11 +199,26 @@ class BlackjackGame:
 
     def play_split_hand(self, player_hand, dealer_hand, bet):
         """Plays a hand that has been split."""
-        while player_hand.value() < 17:
-            player_hand.add_card(self.deck.deal())
-        
+        while True:
+            action = get_action(player_hand, dealer_hand.cards[0])
+            st.write(f"Player action: {action}, Player hand value: {player_hand.value()}")
+            if action == 'H':
+                player_hand.add_card(self.deck.deal())
+                if player_hand.value() > 21:
+                    return -bet  # Player busts
+            elif action == 'S':
+                break
+            elif action == 'D':
+                player_hand.add_card(self.deck.deal())
+                bet *= 2
+                break
+            elif action == 'R':
+                return -bet / 2  # Player surrenders
+
+        # Dealer decisions
         while dealer_hand.value() < 17 or (dealer_hand.value() == 17 and self.dealer_hit_soft_17):
             dealer_hand.add_card(self.deck.deal())
+            st.write(f"Dealer hand value: {dealer_hand.value()}")
 
         return self.resolve_hand(player_hand, dealer_hand) * bet
 
