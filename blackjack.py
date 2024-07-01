@@ -1,240 +1,273 @@
 import random
-# global variables
-suits = ('Hearts', 'Diamonds', 'Spades', 'Clubs') # Tuples
-ranks = ('Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King', 'Ace')
-values = {
-'Two':2,
-'Three':3,
-'Four':4,
-'Five':5,
-'Six':6,
-'Seven':7,
-'Eight':8,
-'Nine':9, 
-'Ten':10,
-'Jack':10,
-'Queen':10,
-'King':10,
-'Ace':11
-} # dictionary
-playing = True # bool
+from collections import defaultdict
+import numpy as np
 
-# create a card class
-class Card():
-	def __init__(self, suit, rank):
-		self.suit = suit
-		self.rank = rank
-	def __str__(self):
-		return self.rank + " of " + self.suit
+# Basic strategy lookup table
+basic_strategy = {
+    'hard': {
+        (5, 6, 7, 8): 'H',
+        (9,): {2: 'H', 3: 'D', 4: 'D', 5: 'D', 6: 'D', 7: 'H', 8: 'H', 9: 'H', 10: 'H', 'A': 'H'},
+        (10,): {2: 'D', 3: 'D', 4: 'D', 5: 'D', 6: 'D', 7: 'D', 8: 'D', 9: 'D', 10: 'H', 'A': 'H'},
+        (11,): {2: 'D', 3: 'D', 4: 'D', 5: 'D', 6: 'D', 7: 'D', 8: 'D', 9: 'D', 10: 'D', 'A': 'H'},
+        (12,): {2: 'H', 3: 'H', 4: 'S', 5: 'S', 6: 'S', 7: 'H', 8: 'H', 9: 'H', 10: 'H', 'A': 'H'},
+        (13, 14): {2: 'S', 3: 'S', 4: 'S', 5: 'S', 6: 'S', 7: 'H', 8: 'H', 9: 'H', 10: 'H', 'A': 'H'},
+        (15,): {2: 'S', 3: 'S', 4: 'S', 5: 'S', 6: 'S', 7: 'H', 8: 'H', 9: 'H', 10: 'R', 'A': 'H'},
+        (16,): {2: 'S', 3: 'S', 4: 'S', 5: 'S', 6: 'S', 7: 'H', 8: 'H', 9: 'R', 10: 'R', 'A': 'R'},
+        (17, 18, 19, 20, 21): 'S'
+    },
+    'soft': {
+        (13, 14): {2: 'H', 3: 'H', 4: 'H', 5: 'H', 6: 'D', 7: 'H', 8: 'H', 9: 'H', 10: 'H', 'A': 'H'},
+        (15, 16): {2: 'H', 3: 'H', 4: 'H', 5: 'D', 6: 'D', 7: 'H', 8: 'H', 9: 'H', 10: 'H', 'A': 'H'},
+        (17,): {2: 'H', 3: 'D', 4: 'D', 5: 'D', 6: 'D', 7: 'H', 8: 'H', 9: 'H', 10: 'H', 'A': 'H'},
+        (18,): {2: 'S', 3: 'D', 4: 'D', 5: 'D', 6: 'D', 7: 'S', 8: 'S', 9: 'H', 10: 'H', 'A': 'H'},
+        (19, 20, 21): 'S'
+    },
+    'pair': {
+        ('A', 'A'): 'Y',
+        ('T', 'T'): 'N',
+        ('9', '9'): {2: 'Y', 3: 'Y', 4: 'Y', 5: 'Y', 6: 'Y', 7: 'N', 8: 'Y', 9: 'Y', 10: 'N', 'A': 'N'},
+        ('8', '8'): 'Y',
+        ('7', '7'): {2: 'Y', 3: 'Y', 4: 'Y', 5: 'Y', 6: 'Y', 7: 'Y', 8: 'N', 9: 'N', 10: 'N', 'A': 'N'},
+        ('6', '6'): {2: 'Y', 3: 'Y', 4: 'Y', 5: 'Y', 6: 'Y', 7: 'N', 8: 'N', 9: 'N', 10: 'N', 'A': 'N'},
+        ('5', '5'): 'N',
+        ('4', '4'): {2: 'N', 3: 'N', 4: 'N', 5: 'Y', 6: 'Y', 7: 'N', 8: 'N', 9: 'N', 10: 'N', 'A': 'N'},
+        ('3', '3'): {2: 'Y', 3: 'Y', 4: 'Y', 5: 'Y', 6: 'Y', 7: 'Y', 8: 'N', 9: 'N', 10: 'N', 'A': 'N'},
+        ('2', '2'): {2: 'Y', 3: 'Y', 4: 'Y', 5: 'Y', 6: 'Y', 7: 'Y', 8: 'N', 9: 'N', 10: 'N', 'A': 'N'}
+    }
+}
 
-# create deck class
-class Deck():
-	def __init__(self):
-		self.deck = []
-		for suit in suits:
-			for rank in ranks:
-				self.deck.append(Card(suit,rank)) # appending the Card object to self.deck list
+def get_action(player_hand, dealer_upcard):
+    """Returns the optimal action based on the player's hand and the dealer's upcard."""
+    if len(player_hand.cards) == 2 and player_hand.cards[0].rank == player_hand.cards[1].rank:
+        pair = (player_hand.cards[0].rank, player_hand.cards[1].rank)
+        if pair in basic_strategy['pair']:
+            action = basic_strategy['pair'][pair]
+            return action if isinstance(action, str) else action[dealer_upcard.value()]
 
-	def __str__(self):
-		deckComposition = '' # set the deck comp as an empty string
-		for card in self.deck:
-			deckComposition += '\n'+ card.__str__() # Card class string representation
-		return "The deck has: " + deckComposition
-	
-	def shuffle(self):
-		random.shuffle(self.deck)
+    hand_type = 'soft' if any(card.rank == 'A' and card.value() == 11 for card in player_hand.cards) else 'hard'
+    player_total = player_hand.value()
+    
+    if hand_type == 'soft':
+        if player_total in basic_strategy['soft']:
+            action = basic_strategy['soft'][player_total]
+            return action if isinstance(action, str) else action[dealer_upcard.value()]
+    else:
+        if player_total in basic_strategy['hard']:
+            action = basic_strategy['hard'][player_total]
+            return action if isinstance(action, str) else action[dealer_upcard.value()]
 
-# grab the deck attribute of Deck class then pop off card item from list and set it to single card
-	def deal(self):
-		singleCard = self.deck.pop()
-		return singleCard
+    return 'H'  # Default action if not specified
 
-# testing everything so far
-# testDeck = Deck()
-# testDeck.shuffle()
-# print(testDeck)
+class Card:
+    """Represents a single card in a deck."""
+    def __init__(self, rank, suit):
+        self.rank = rank
+        self.suit = suit
 
-# create hand class: grabbing the single card and adding to someone's hand
-class Hand():
-	def __init__(self):
-		self.cards = [] # start with 0 cards in hand
-		self.value = 0 # starting with 0 value
-		self.aces = 0 # keep track of aces
+    def value(self):
+        """Returns the value of the card."""
+        if self.rank in ['J', 'Q', 'K']:
+            return 10
+        elif self.rank == 'A':
+            return 11
+        else:
+            return int(self.rank)
 
-	# card object is Deck.deal() that has single card and sc has suit and rank
-	def addCard(self, card):
-		self.cards.append(card) # taking card object and appending it to self.cards list
-		# take the cards rank and lookup in values dict and add to self.value
-		# if value is > 21 this particular hand has lost the game
-		self.value += values [card.rank]
+class Deck:
+    """Represents a deck of cards, which can consist of multiple decks."""
+    def __init__(self, num_decks=8):
+        ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+        suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
+        self.cards = [Card(rank, suit) for _ in range(num_decks) for rank in ranks for suit in suits]
+        self.shuffle()
 
-		# track aces
-		if card.rank == 'Ace':
-			self.aces += 1
-	
-# test_deck = Deck()
-# test_deck.shuffle()
-# test_player = Hand()
-# pulled_card = test_deck.deal()
-# print(pulled_card)
-# test_player.addCard(pulled_card)
-# print(test_player.value)
-	def checkAces(self):
-		# if value > 21 and if ace is available
-		while self.value > 21 and self.aces: # we can also set this to > 0
-			self.value -= 10 # take my value and subtract 10 
-			self.aces -= 1 # take my aces and subtract 1
+    def shuffle(self):
+        """Shuffles the deck."""
+        random.shuffle(self.cards)
 
-# create chips class
-class Chips():
-	def __init__(self, total=1000):
-		self.total = total # set a default value or allow user to input
-		self.bet = 0
+    def deal(self):
+        """Deals a card from the deck, reinitializing if the deck is empty."""
+        if not self.cards:
+            self.__init__()
+        return self.cards.pop()
 
-	def winBet(self):
-		self.total += self.bet
+class Hand:
+    """Represents a player's or dealer's hand in blackjack."""
+    def __init__(self):
+        self.cards = []
 
-	def loseBet(self):
-		self.total -= self.bet
+    def add_card(self, card):
+        """Adds a card to the hand."""
+        self.cards.append(card)
 
-# create a function for taking bets
-def takeBet(chips):
-	while True:
-		try:
-			chips.bet = int(input("How many chips would you like to bet? "))
-		except ValueError:
-			print('Sorry, a bet must be a number!')
-		else:
-			if chips.bet > chips.total:
-				print("Sorry, your bet can't exceed, you have only {} chips left." .format(chips.total))
-			else:
-				break
+    def value(self):
+        """Calculates the total value of the hand, adjusting for Aces as needed."""
+        total = sum(card.value() for card in self.cards)
+        num_aces = sum(1 for card in self.cards if card.rank == 'A')
+        while total > 21 and num_aces > 0:
+            total -= 10
+            num_aces -= 1
+        return total
 
-# function for taking hits
-def hit(deck, hand):
-	# handCard = deck.deal()
-	# hand.addCard(singleCard)
-	# hand.checkAces()
-	hand.addCard(deck.deal())
-	hand.checkAces()
+class BlackjackGame:
+    """Represents a game of blackjack."""
+    def __init__(self, num_decks=8, blackjack_payout=1.5, dealer_hit_soft_17=True):
+        self.deck = Deck(num_decks)
+        self.blackjack_payout = blackjack_payout
+        self.dealer_hit_soft_17 = dealer_hit_soft_17
 
-# function for asking player hit/stand
-def hitOrStand(deck, hand):
-	global playing
+    def play_hand(self, bet):
+        """Simulates a single hand of blackjack."""
+        player_hand = Hand()
+        dealer_hand = Hand()
 
-	while True:
-		x = input("Would you like to Hit or Stand? Enter 'h' or 's': ")
+        # Initial deal
+        player_hand.add_card(self.deck.deal())
+        dealer_hand.add_card(self.deck.deal())
+        player_hand.add_card(self.deck.deal())
+        dealer_hand.add_card(self.deck.deal())
 
-		if x[0].lower() == 'h':
-			hit(deck, hand)
-		elif x[0].lower() == 's':
-			print("Player stands. Dealer is playing.")
-			playing = False
-		else:
-			print("Sorry, try again!")
-			continue
+        # Check for blackjack
+        if player_hand.value() == 21:
+            if dealer_hand.value() == 21:
+                return 0  # Push
+            else:
+                return bet * self.blackjack_payout
 
-		break
+        # Player decisions based on basic strategy
+        while True:
+            action = get_action(player_hand, dealer_hand.cards[0])
+            if action == 'H':
+                player_hand.add_card(self.deck.deal())
+                if player_hand.value() > 21:
+                    return -bet  # Player busts
+            elif action == 'S':
+                break
+            elif action == 'D':
+                player_hand.add_card(self.deck.deal())
+                bet *= 2
+                break
+            elif action == 'Y':
+                return self.handle_split(player_hand, dealer_hand, bet)
+            elif action == 'R':
+                return -bet / 2  # Player surrenders
 
+        # Dealer decisions
+        while dealer_hand.value() < 17 or (dealer_hand.value() == 17 and self.dealer_hit_soft_17):
+            dealer_hand.add_card(self.deck.deal())
 
-# function for showing cards
-def showCards(player, dealer):
-	
-	print("\nDealers's Turn: ")
-	print("<card hidden>")
-	# print(' ' + dealer.cards[1].__str__())
-	print('',dealer.cards[1])
-	print("\nPlayer's Turn:", *player.cards, sep='\n ')
+        return self.resolve_hand(player_hand, dealer_hand) * bet
 
-def showAll(player,dealer):
+    def resolve_hand(self, player_hand, dealer_hand):
+        """Resolves the outcome of a hand."""
+        if player_hand.value() > 21:
+            return -1  # Player busts
+        elif dealer_hand.value() > 21 or player_hand.value() > dealer_hand.value():
+            return 1  # Player wins
+        elif player_hand.value() == dealer_hand.value():
+            return 0  # Push
+        else:
+            return -1  # Dealer wins
 
-	# asterisk * symbol is used to print every item in a collection
-	print("\nDealer's Turn:", *dealer.cards, sep='\n ') # sep='\n ' argument prints each item on a separate line
-	print("Dealer's Turn =", dealer.value)
-	print("\nPlayer's Turn:", *player.cards, sep='\n ')
-	print("Player's Turn =", player.value)
+    def can_split(self, hand):
+        """Determines if the player can split their hand."""
+        return len(hand.cards) == 2 and hand.cards[0].rank == hand.cards[1].rank
 
-# functions for ending game scenarios
-def playerBusted(player, dealer, chips):
-	
-	print("Player busted!")
-	chips.loseBet()
+    def handle_split(self, player_hand, dealer_hand, bet):
+        """Handles splitting a hand."""
+        split_hand_1 = Hand()
+        split_hand_2 = Hand()
+        
+        split_hand_1.add_card(player_hand.cards[0])
+        split_hand_2.add_card(player_hand.cards[1])
+        
+        split_hand_1.add_card(self.deck.deal())
+        split_hand_2.add_card(self.deck.deal())
+        
+        result_1 = self.play_split_hand(split_hand_1, dealer_hand, bet)
+        result_2 = self.play_split_hand(split_hand_2, dealer_hand, bet)
+        
+        return result_1 + result_2
 
-def playerWins(player, dealer, chips):
-	
-	print("Player wins!")
-	chips.winBet()
+    def play_split_hand(self, player_hand, dealer_hand, bet):
+        """Plays a hand that has been split."""
+        while player_hand.value() < 17:
+            player_hand.add_card(self.deck.deal())
+        
+        while dealer_hand.value() < 17 or (dealer_hand.value() == 17 and self.dealer_hit_soft_17):
+            dealer_hand.add_card(self.deck.deal())
 
-def dealerBusted(player, dealer, chips):
-	
-	print("Dealer busted!")
-	chips.loseBet()
+        return self.resolve_hand(player_hand, dealer_hand) * bet
 
-def dealerWins(player, dealer, chips):
-	print("Dealer busted!")
-	chips.winBet()
+def run_simulation(num_simulations, max_hands, win_goal, max_loss, min_bet):
+    """Runs the blackjack simulation."""
+    game = BlackjackGame()
+    results = []
 
-def greatTie(player, dealer):
-	print("Wow! This is a tie")
+    for _ in range(num_simulations):
+        bankroll = 0
+        hands_played = 0
 
-# play logic for game
+        while hands_played < max_hands and bankroll > -max_loss and bankroll < win_goal:
+            result = game.play_hand(min_bet)
+            bankroll += result
+            hands_played += 1
 
-while True:
-	print("Welcome to BlackJack")
-	# shuffle and deal two cards to each player
-	deck = Deck()
-	deck.shuffle()
+        results.append((bankroll, hands_played))
 
-	playerHand = Hand()
-	playerHand.addCard(deck.deal())
-	playerHand.addCard(deck.deal())
+    return results
 
-	dealerHand = Hand()
-	dealerHand.addCard(deck.deal())
-	dealerHand.addCard(deck.deal())
+def analyze_results(results, min_bet):
+    """Analyzes the results of the simulation."""
+    bankrolls, hands_played = zip(*results)
+    
+    avg_bankroll = np.mean(bankrolls)
+    std_bankroll = np.std(bankrolls)
+    
+    wins = sum(1 for b in bankrolls if b > 0)
+    losses = sum(1 for b in bankrolls if b < 0)
+    
+    avg_hands = np.mean(hands_played)
+    
+    return {
+        'avg_bankroll': avg_bankroll,
+        'std_bankroll': std_bankroll,
+        'win_probability': wins / len(results),
+        'loss_probability': losses / len(results),
+        'avg_hands_played': avg_hands,
+        'earnings_potential': avg_bankroll / min_bet
+    }
 
-	playerChips = Chips() # players chips
-	takeBet(playerChips) # prompting player for their bet
+def main(further_reduced_simulations=1000):
+    """Main function to run the blackjack simulation."""
+    num_simulations = further_reduced_simulations
+    min_bet = 50
+    max_hands = 200
+    
+    results = defaultdict(dict)
+    
+    for max_loss in [5, 10, 20]:
+        for win_goal in [1, 2, 5, 10]:
+            print(f"Running simulation for max_loss={max_loss}x, win_goal={win_goal}x")
+            sim_results = run_simulation(num_simulations, max_hands, win_goal * min_bet, max_loss * min_bet, min_bet)
+            results[max_loss][win_goal] = analyze_results(sim_results, min_bet)
 
-	showCards(playerHand, dealerHand) # show cards for dealer and player
+    # Print results
+    print("\nEarnings Potential (e_f):")
+    print("   ", end="")
+    for win_goal in [1, 2, 5, 10]:
+        print(f"{win_goal:>8}x", end="")
+    print()
+    
+    for max_loss in [5, 10, 20]:
+        print(f"{max_loss:2}x", end="")
+        for win_goal in [1, 2, 5, 10]:
+            print(f"{results[max_loss][win_goal]['earnings_potential']:8.2f}", end="")
+        print()
 
-	while playing:
-		hitOrStand(deck, playerHand) # prompt for hit or stand
+    return results
 
-		showCards(playerHand, dealerHand)
-
-		# if player hand exceeds 21 run playerBusted() and break
-		if playerHand.value > 21:
-			playerBusted(playerHand, dealerHand, playerChips)
-
-			break
-
-	# soft 17 rule: keep playing until dealer reaches 17
-	if playerHand.value <= 21:
-		while dealerHand.value < playerHand.value:
-			hit(deck, dealerHand)
-
-		showAll(playerHand, dealerHand) # show all cards
-
-		# run a different game win scenario
-		if dealerHand.value > 21:
-			dealerBusted(playerHand, dealerHand, playerChips)
-		elif dealerHand.value > playerHand.value:
-			dealerWins(playerHand, dealerHand, playerChips)
-		elif dealerHand.value < playerHand.value:
-			playerWins(playerHand, dealerHand, playerChips)
-		else:
-			greatTie(playerHand, dealerHand)
-
-	# show player their total remaining chips
-	print("\n Player total chips are at: {}" .format(playerChips.total))
-
-	#ask to play again
-	newGame = input("Want to play again? y/n: ")
-	
-	if newGame[0].lower() == 'y':
-		playing = True
-		continue
-	else:
-		print("Thank you for playing BlackJack! See you again.")
-		break
+# Run the main function with further reduced simulations and store results
+if __name__ == "__main__":
+    simulation_results_further_reduced = main(further_reduced_simulations=1000)
+    print(simulation_results_further_reduced)
