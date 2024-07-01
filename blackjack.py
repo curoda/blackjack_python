@@ -210,7 +210,7 @@ def run_simulation(num_simulations, max_hands, win_goal, max_loss, min_bet):
     game = BlackjackGame()
     results = []
 
-    for _ in range(num_simulations):
+    for i in range(num_simulations):
         bankroll = 0
         hands_played = 0
 
@@ -220,6 +220,8 @@ def run_simulation(num_simulations, max_hands, win_goal, max_loss, min_bet):
             hands_played += 1
 
         results.append((bankroll, hands_played))
+        if i % 100 == 0:  # Update progress every 100 simulations
+            st.write(f"Simulation {i} of {num_simulations} completed")
 
     return results
 
