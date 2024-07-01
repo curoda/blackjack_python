@@ -39,11 +39,16 @@ basic_strategy = {
 
 def get_action(player_hand, dealer_upcard):
     """Returns the optimal action based on the player's hand and the dealer's upcard."""
+    # Map dealer upcard values correctly
+    dealer_value = dealer_upcard.value()
+    if dealer_value == 11:
+        dealer_value = 'A'
+    
     if len(player_hand.cards) == 2 and player_hand.cards[0].rank == player_hand.cards[1].rank:
         pair = (player_hand.cards[0].rank, player_hand.cards[1].rank)
         if pair in basic_strategy['pair']:
             action = basic_strategy['pair'][pair]
-            return action if isinstance(action, str) else action[dealer_upcard.value()]
+            return action if isinstance(action, str) else action[dealer_value]
 
     hand_type = 'soft' if any(card.rank == 'A' and card.value() == 11 for card in player_hand.cards) else 'hard'
     player_total = player_hand.value()
@@ -51,11 +56,11 @@ def get_action(player_hand, dealer_upcard):
     if hand_type == 'soft':
         if player_total in basic_strategy['soft']:
             action = basic_strategy['soft'][player_total]
-            return action if isinstance(action, str) else action[dealer_upcard.value()]
+            return action if isinstance(action, str) else action[dealer_value]
     else:
         if player_total in basic_strategy['hard']:
             action = basic_strategy['hard'][player_total]
-            return action if isinstance(action, str) else action[dealer_upcard.value()]
+            return action if isinstance(action, str) else action[dealer_value]
 
     return 'H'  # Default action if not specified
 
