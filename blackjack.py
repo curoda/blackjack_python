@@ -292,7 +292,7 @@ def main(num_simulations, min_bet, max_hands):
     return results
 
 # Streamlit interface
-st.title("Blackjack Simulation")
+st.title("Blackjack Simulation v2")
 
 num_simulations = st.number_input("Number of Simulations", min_value=1, max_value=10000, value=10, step=1)
 min_bet = st.number_input("Minimum Bet", min_value=1, max_value=1000, value=50, step=10)
