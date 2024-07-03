@@ -227,10 +227,12 @@ def run_simulation(num_simulations, max_hands, win_goal, max_loss, min_bet):
     game = BlackjackGame()
     results = []
     progress_bar = st.progress(0)
+    st.write("initiated game, results, progress bar")
 
     for i in range(num_simulations):
         bankroll = 0
         hands_played = 0
+        st.write("in simulation, hand " + str(i))
 
         while hands_played < max_hands and bankroll > -max_loss and bankroll < win_goal:
             result = game.play_hand(min_bet)
