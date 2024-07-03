@@ -93,7 +93,7 @@ class Deck:
 
     def deal(self):
         """Deals a card from the deck, reinitializing if the deck is empty."""
-        if not self.cards:
+        if len(self.cards) < 30:
             self.__init__()
         return self.cards.pop()
 
@@ -189,7 +189,7 @@ class BlackjackGame:
         
         split_hand_1.add_card(self.deck.deal())
         split_hand_2.add_card(self.deck.deal())
-        
+
         result_1 = self.play_split_hand(split_hand_1, dealer_hand, bet)
         result_2 = self.play_split_hand(split_hand_2, dealer_hand, bet)
         
@@ -197,6 +197,10 @@ class BlackjackGame:
 
     def play_split_hand(self, player_hand, dealer_hand, bet):
         """Plays a hand that has been split."""
+        if player_hand.cards[0].rank == 'A':
+            player_hand.add_card(self.deck.deal())
+            return self.resolve_hand(player_hand, dealer_hand) * bet
+        
         while True:
             action = get_action(player_hand, dealer_hand.cards[0])
             if action == 'H':
