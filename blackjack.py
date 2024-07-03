@@ -133,6 +133,8 @@ class BlackjackGame:
         player_hand.add_card(self.deck.deal())
         dealer_hand.add_card(self.deck.deal())
 
+        st.write(f"Initial hands: Player: {player_hand.value()}, Dealer: {dealer_hand.cards[0].value()}")
+
         # Check for blackjack
         if player_hand.value() == 21:
             if dealer_hand.value() == 21:
@@ -143,6 +145,7 @@ class BlackjackGame:
         # Player decisions based on basic strategy
         while True:
             action = get_action(player_hand, dealer_hand.cards[0])
+            st.write(f"Action: {action}, Player hand: {player_hand.value()}, Dealer upcard: {dealer_hand.cards[0].value()}")
             if action == 'H':
                 player_hand.add_card(self.deck.deal())
                 if player_hand.value() > 21:
@@ -203,6 +206,7 @@ class BlackjackGame:
         
         while True:
             action = get_action(player_hand, dealer_hand.cards[0])
+            st.write(f"Split Action: {action}, Player hand: {player_hand.value()}, Dealer upcard: {dealer_hand.cards[0].value()}")
             if action == 'H':
                 player_hand.add_card(self.deck.deal())
                 if player_hand.value() > 21:
@@ -234,11 +238,14 @@ def run_simulation(num_simulations, max_hands, win_goal, max_loss, min_bet):
         hands_played = 0
 
         while hands_played < max_hands and bankroll > -max_loss and bankroll < win_goal:
+            st.write(f"Before playing hand: Bankroll = {bankroll}, Hands played = {hands_played}")
             result = game.play_hand(min_bet)
             bankroll += result
             hands_played += 1
+            st.write(f"After playing hand: Bankroll = {bankroll}, Hands played = {hands_played}, Result = {result}")
 
-            st.write(f"Simulation {i + 1}, Hand {hands_played}: Bankroll = {bankroll}")
+            if hands_played % 50 == 0:
+                st.write(f"Simulation {i + 1}, Hand {hands_played}: Bankroll = {bankroll}")
 
         results.append((bankroll, hands_played))
         if i % 10 == 0:  # Update progress every 10 simulations
