@@ -232,16 +232,13 @@ def run_simulation(num_simulations, max_hands, win_goal, max_loss, min_bet):
     for i in range(num_simulations):
         bankroll = 0
         hands_played = 0
-        st.write("in simulation, hand " + str(i))
 
         while hands_played < max_hands and bankroll > -max_loss and bankroll < win_goal:
             result = game.play_hand(min_bet)
             bankroll += result
             hands_played += 1
 
-            # Reduce the frequency of updates to Streamlit
-            if hands_played % 50 == 0:
-                st.write(f"Simulation {i + 1}, Hand {hands_played}: Bankroll = {bankroll}")
+            st.write(f"Simulation {i + 1}, Hand {hands_played}: Bankroll = {bankroll}")
 
         results.append((bankroll, hands_played))
         if i % 10 == 0:  # Update progress every 10 simulations
